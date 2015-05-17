@@ -10,21 +10,21 @@ import javax.crypto.spec.PBEKeySpec;
 
 public class CryptoUtils {
 
-	public static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
+	private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
 
-	public static final int SALT_BYTE_SIZE = 24;
-	public static final int HASH_BYTE_SIZE = 24;
-	public static final int PBKDF2_ITERATIONS = 1000;
+	private static final int SALT_BYTE_SIZE = 24;
+	private static final int HASH_BYTE_SIZE = 24;
+	private static final int PBKDF2_ITERATIONS = 1000;
 
-	public static final int ITERATION_INDEX = 0;
-	public static final int SALT_INDEX = 1;
-	public static final int PBKDF2_INDEX = 2;
+	private static final int ITERATION_INDEX = 0;
+	private static final int SALT_INDEX = 1;
+	private static final int PBKDF2_INDEX = 2;
 
 	public static String createHash(String password) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		return createHash(password.toCharArray());
 	}
 
-	public static String createHash(char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	private static String createHash(char[] password) throws NoSuchAlgorithmException, InvalidKeySpecException {
 
 		SecureRandom random = new SecureRandom();
 		byte[] salt = new byte[SALT_BYTE_SIZE];
@@ -39,7 +39,7 @@ public class CryptoUtils {
 		return validatePassword(password.toCharArray(), correctHash);
 	}
 
-	public static boolean validatePassword(char[] password, String correctHash) throws NoSuchAlgorithmException, InvalidKeySpecException {
+	private static boolean validatePassword(char[] password, String correctHash) throws NoSuchAlgorithmException, InvalidKeySpecException {
 		String[] params = correctHash.split(":");
 		int iterations = Integer.parseInt(params[ITERATION_INDEX]);
 		byte[] salt = fromHex(params[SALT_INDEX]);

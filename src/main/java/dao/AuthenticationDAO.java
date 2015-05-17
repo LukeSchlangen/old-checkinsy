@@ -1,16 +1,17 @@
 package main.java.dao;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 
+import main.java.model.User;
+import main.java.util.CryptoUtils;
 import main.java.util.LoggingUtils;
 
 public class AuthenticationDAO {
@@ -21,33 +22,48 @@ public class AuthenticationDAO {
 	private static final String SECRET_KEY = "DMncTofbEr9f43GHcMh+8IkpjZKDcFAGAWFa/SfE";	
 	
 	private static final String END_POINT = "dynamodb.us-west-2.amazonaws.com";
-	private static final String TABLE_NAME = "Authentication";
-	private static final String HASH_KEY = "Username";
-	
-	private AmazonDynamoDB database;	
+
+	private DynamoDBMapper mapper;
 	
 	public AuthenticationDAO() throws IOException {
 		logger = LoggingUtils.getInstance();
-		database = setupDatabase();		
+		setupDatabase();		
 	}
 	
-	public void addUser(String username, String password) {
-		
-		Map<String, AttributeValue> key = new HashMap<>();
-		key.put(HASH_KEY, new AttributeValue().withS(username));
-		PutItemRequest putRequest = new PutItemRequest()
-			.withTableName(TABLE_NAME)
-			.withItem(key);
-		database.putItem(putRequest);
+	public void addUser(String username, String password) throws Exception {
+		String encryptedPassword = CryptoUtils.createHash(password);
+		User user = new User(username, encryptedPassword);
+		mapper.save(user);
 		
 		logger.info(String.format("Added user [%s] to the Authentication table", username));
 	}
 	
-	private AmazonDynamoDB setupDatabase() {
+	public void deleteUser(String username) {
+		User user = new User(username);
+		mapper.delete(user);
+		
+		logger.info(String.format("Deleted user [%s] from the Authentication table", username));
+	}
+	
+	public User getUser(String username) {
+		User user = new User(username);
+		DynamoDBQueryExpression<User> query = new DynamoDBQueryExpression<User>().withHashKeyValues(user);
+		List<User> result = mapper.query(User.class, query);
+		
+		if(result.isEmpty()) {
+			logger.info(String.format("Failed to find user [%s]", username));
+		} else if(result.size() > 1) {
+			logger.info(String.format("Found [%d] users for username [%s]. Returning only one.", result.size(), username));
+		}
+		
+		return result.get(0);
+	}
+	
+	private void setupDatabase() {
 		BasicAWSCredentials credentials = new BasicAWSCredentials(ACCESS_KEY, SECRET_KEY);
 		AmazonDynamoDB dynamoDB = new AmazonDynamoDBClient(credentials);
 		dynamoDB.setEndpoint(END_POINT);
 		
-		return dynamoDB;
+		mapper = new DynamoDBMapper(dynamoDB);
 	}
 }
