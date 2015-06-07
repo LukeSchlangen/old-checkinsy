@@ -1,9 +1,7 @@
 package main.java.controller;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletException;
@@ -26,6 +24,8 @@ public class RequestHandler extends HttpServlet {
 	
 	private static Logger logger;
 	
+	private int counter = 0;
+	
 	private AuthenticationDAO authenticationDAO;
 
     public RequestHandler() throws IOException {
@@ -38,15 +38,6 @@ public class RequestHandler extends HttpServlet {
 		
 		
 		String testUser = "Tom";
-		JSONObject json = new JSONObject();
-		try {
-			json.put("key", "value");
-			response.setStatus(200);
-			response.setContentType("json");
-			response.getWriter().write(json.toString());
-		} catch (JSONException e) {
-			logger.info("oops?");
-		}
 		try {
 			authenticationDAO.addUser(testUser, "Password");
 			User user = authenticationDAO.getUser(testUser);
@@ -63,9 +54,39 @@ public class RequestHandler extends HttpServlet {
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		try {
+			JSONObject json = parseJson(request);
+			logger.info("Logging param1 passed from the client");
+			logger.info("param1 => " + json.getString("param1"));
+			
+			/*
+			 *DO SOME SERVER SIDE STUFF HERE
+			 */
+			
+			json = new JSONObject();
+			logger.info("Now passing it back to the client with some random response");
+			json.put("count", counter++);
+			response.setStatus(200);
+			response.setContentType("json");
+			response.getWriter().write(json.toString());
+		} catch (JSONException e) {
+			logger.info("oops?");
+		} finally {
+			/*
+			 * CLEAN UP CODE HERE
+			 */
+		}			
+	}
+	
+	private JSONObject parseJson(HttpServletRequest request) throws IOException, JSONException {
+		BufferedReader jsonReader = request.getReader();
+		StringBuffer stringBuffer = new StringBuffer();
+		String line = null;
 		
+		while ((line = jsonReader.readLine()) != null) {
+			stringBuffer.append(line);
+		}
 		
-		
-		
+		return new JSONObject(stringBuffer.toString());
 	}
 }
