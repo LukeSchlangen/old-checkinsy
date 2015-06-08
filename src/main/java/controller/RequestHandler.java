@@ -14,8 +14,6 @@ import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
 import main.java.dao.AuthenticationDAO;
-import main.java.model.User;
-import main.java.util.CryptoUtils;
 import main.java.util.LoggingUtils;
 
 @WebServlet("/handler")
@@ -33,49 +31,58 @@ public class RequestHandler extends HttpServlet {
     	logger = LoggingUtils.getInstance();
     }
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		
-		
-		
-		String testUser = "Tom";
-		try {
-			authenticationDAO.addUser(testUser, "Password");
-			User user = authenticationDAO.getUser(testUser);
-			logger.info(String.format("Fetched user [%s] with encyrpted password [%s]", user.getUsername(), user.getPassword()));
-			logger.info(String.format("Valid password decryption? [%s]", CryptoUtils.validatePassword("Password", user.getPassword())));
-			authenticationDAO.deleteUser("Tom");
-			
-		} catch (Exception e) {
-			logger.severe("Oops...something went wrong!");
-			e.printStackTrace();
-		} finally {
-			logger.info("Success?!");
-		}
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		doPost(request, response);
 	}
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		try {
 			JSONObject json = parseJson(request);
-			logger.info("Logging param1 passed from the client");
-			logger.info("param1 => " + json.getString("param1"));
+			String requestType = json.getString("type");
+			logger.info("Received request of type " + requestType);
 			
-			/*
-			 *DO SOME SERVER SIDE STUFF HERE
-			 */
-			
-			json = new JSONObject();
-			logger.info("Now passing it back to the client with some random response");
-			json.put("count", counter++);
-			response.setStatus(200);
-			response.setContentType("json");
-			response.getWriter().write(json.toString());
-		} catch (JSONException e) {
+			switch(requestType) {
+				case "TEST":
+					test(json, response);
+					break;
+				case "CREATE_ACCOUNT":
+					createAccount(json, response);
+					break;
+			}
+
+		} catch (Exception e) {
 			logger.info("oops?");
 		} finally {
 			/*
 			 * CLEAN UP CODE HERE
 			 */
 		}			
+	}
+	
+	private void test(JSONObject json, HttpServletResponse response) throws Exception {
+		setResponse(response, "TEST_SUCCESS_" + counter++);
+	}
+	
+	private void createAccount(JSONObject json, HttpServletResponse response) throws Exception {
+		String username = json.getString("username");
+		String password = json.getString("password");
+		
+		if(authenticationDAO.getUser(username) == null) {
+			logger.info(String.format("Creating user [%s]", username));
+			authenticationDAO.addUser(username, password);
+			setResponse(response, "CREATE_SUCCESS");
+		} else {
+			logger.info(String.format("User [%s] exists in the system", username));
+			setResponse(response, "USER_EXISTS");
+		}
+	}
+	
+	private void setResponse(HttpServletResponse response, String responseValue) throws Exception {
+		JSONObject json = new JSONObject();
+		json.put("response", responseValue);
+		response.setStatus(200);
+		response.setContentType("json");
+		response.getWriter().write(json.toString());
 	}
 	
 	private JSONObject parseJson(HttpServletRequest request) throws IOException, JSONException {

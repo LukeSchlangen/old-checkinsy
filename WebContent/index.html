@@ -1,27 +1,22 @@
 <html>
 <head>
-<script>
-function sendRequest()
-{
-	var request = JSON.stringify({
-		param1:"something1",
-		parma2:"something2"
-	});
-	var xmlHttp = new XMLHttpRequest();
-	xmlHttp.open('POST', 'http://localhost:8001/checkinsy/handler', true);
-	xmlHttp.send(request);
-	xmlHttp.onreadystatechange = function() {
-		if (xmlHttp.readyState==4 && xmlHttp.status==200) {
-			document.getElementById("response").innerHTML = xmlHttp.responseText;
-			//or for a fancy pop up
-			//window.alert(xmlHttp.responseText);
-		}
-	}	
-}
-</script>
+<script src="/checkinsy/javascript/authentication.js"></script>
 </head>
 <body>
-<button type="button" onclick="sendRequest()">Send Request</button>
-<div id="response">Request Not Sent</div>
+<button type="button" onclick="testRequest()">Test Request</button>
+<div id="testResponse">Request Not Sent</div>
+
+<hr>
+
+<form onsubmit="createAccount()">
+	Username: <input type="text" id="username"><br>
+	Password: <input type="password" id="password"><br>
+	<input type="submit" value="Create Account">
+</form>
+<div id="createResponse">Request Not Sent</div>
+
+<hr>
+
+
 </body>
 </html>

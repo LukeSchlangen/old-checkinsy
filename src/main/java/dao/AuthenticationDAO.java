@@ -52,11 +52,11 @@ public class AuthenticationDAO {
 		
 		if(result.isEmpty()) {
 			logger.info(String.format("Failed to find user [%s]", username));
-		} else if(result.size() > 1) {
+			return null;
+		} else {
 			logger.info(String.format("Found [%d] users for username [%s]. Returning only one.", result.size(), username));
+			return result.get(0);
 		}
-		
-		return result.get(0);
 	}
 	
 	private void setupDatabase() {
