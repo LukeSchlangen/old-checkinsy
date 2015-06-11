@@ -10,10 +10,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.amazonaws.util.json.JSONArray;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 
 import main.java.dao.AuthenticationDAO;
+import main.java.dao.MemberDAO;
 import main.java.util.LoggingUtils;
 
 @WebServlet("/handler")
@@ -25,9 +27,12 @@ public class RequestHandler extends HttpServlet {
 	private int counter = 0;
 	
 	private AuthenticationDAO authenticationDAO;
+	
+	private MemberDAO memberDAO;
 
     public RequestHandler() throws IOException {
     	authenticationDAO = new AuthenticationDAO();
+    	memberDAO = new MemberDAO();
     	logger = LoggingUtils.getInstance();
     }
 
@@ -48,10 +53,16 @@ public class RequestHandler extends HttpServlet {
 				case "CREATE_ACCOUNT":
 					createAccount(json, response);
 					break;
+				case "CREATE_MEMBER":
+					createMember(json, response);
+					break;
+				case "GET_USERS":
+					getUsers(json, response);
+					break;
 			}
 
 		} catch (Exception e) {
-			logger.info("oops?");
+			logger.severe(e.toString());
 		} finally {
 			/*
 			 * CLEAN UP CODE HERE
@@ -75,6 +86,22 @@ public class RequestHandler extends HttpServlet {
 			logger.info(String.format("User [%s] exists in the system", username));
 			setResponse(response, "USER_EXISTS");
 		}
+	}
+	
+	private void createMember(JSONObject json, HttpServletResponse response) throws Exception {
+		String name = json.getString("name");
+		String group = json.getString("group");
+		memberDAO.createMember(name, group);
+		setResponse(response, "CREATE_SUCCESS");
+	}
+	
+	private void getUsers(JSONObject json, HttpServletResponse response) throws Exception {
+		String group = json.getString("group");		
+		JSONObject returnJson = new JSONObject();
+		JSONArray members = memberDAO.getUsersForGroup(group);
+		returnJson.put("group", group);
+		returnJson.put("members", members);
+		setResponse(response, returnJson.toString());		
 	}
 	
 	private void setResponse(HttpServletResponse response, String responseValue) throws Exception {
